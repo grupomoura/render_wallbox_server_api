@@ -3,7 +3,7 @@ from typing import Optional
 
 from fastapi import Depends, HTTPException, status # type: ignore
 from fastapi.security import OAuth2PasswordBearer # type: ignore
-from jose import jwt # type: ignore JWTError
+from jose import JWT # type: ignore
 from passlib.context import CryptContext # type: ignore
 import os
 from dotenv import load_dotenv
@@ -55,7 +55,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     else:
         expire = datetime.now(timezone.utc) + timedelta(minutes=15)
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    encoded_jwt = JWT.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
 def get_current_user(token: str = Depends(oauth2_scheme)) -> UserInDB:
@@ -66,7 +66,7 @@ def get_current_user(token: str = Depends(oauth2_scheme)) -> UserInDB:
     )
     try:
         logger.info("Decoding token")
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = JWT.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
         role: str = payload.get("role")
         if username is None or role is None:
