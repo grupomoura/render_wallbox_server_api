@@ -12,7 +12,7 @@ uvicorn
 celery
 kombu
 pika==1.1.0
-jose
+python-jose
 pycryptodome
 urllib3
 PyJWT
