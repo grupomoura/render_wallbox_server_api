@@ -65,7 +65,7 @@ if ENVIRONMENT == "production":
         response = await call_next(request)
         response.headers['Content-Security-Policy'] = (
             f"default-src 'self'; "
-            f"script-src 'self' https://cdn.jsdelivr.net 'nonce-{nonce}'; "
+            f"script-src 'self' https://cdn.jsdelivr.net 'nonce-{nonce}' 'sha256-QOOQu4W1oxGqd2nbXbxiA1Di6OHQOLQD+o+G9oWL8YY='; "
             f"style-src 'self' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
             f"font-src 'self' https://fonts.gstatic.com; "
             f"img-src 'self' data: https://fastapi.tiangolo.com; "
