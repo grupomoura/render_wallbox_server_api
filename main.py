@@ -45,11 +45,11 @@ app.add_middleware(
     allow_origins=["*"],  # Permitir todas as origens
     allow_credentials=True,
     allow_methods=["GET", "POST"],
-    allow_headers=["Authorization", "Content-Type", "WWW-Authenticate"], 
+    allow_headers=["*"], 
 )
 
 ENVIRONMENT = os.getenv("ENVIRONMENT")
-PORT = 8000
+PORT = os.getenv("PORT") or 8000
 
 # Regras de segurança no HEADER
 if ENVIRONMENT == "production":
@@ -62,7 +62,13 @@ if ENVIRONMENT == "production":
     async def add_security_headers(request: requests.Request, call_next):
         response = await call_next(request)
         # Content Security Policy
-        response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self';"
+        response.headers['Content-Security-Policy'] = (
+            "default-src 'self'; "
+            "script-src 'self' https://cdn.jsdelivr.net; "
+            "style-src 'self' https://cdn.jsdelivr.net; "
+            "img-src 'self' data: https://fastapi.tiangolo.com; "
+            "connect-src 'self';"
+        )
         # Strict-Transport-Security
         response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
         # X-Content-Type-Options
