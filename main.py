@@ -1,6 +1,7 @@
 import requests
 from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.csp import CSPMiddleware # type: ignore
 from fastapi import Depends, HTTPException, status
 from fake_users_db import fake_users_db
 
@@ -38,6 +39,16 @@ app = FastAPI(
     redoc_url="/redoc",
     openapi_url="/openapi.json"
 )
+
+# Configuração da Política de Segurança de Conteúdo (CSP)
+csp = {
+    "default-src": ["'self'"],
+    "style-src": ["'self'", "https://cdn.jsdelivr.net"],
+    "img-src": ["'self'", "https://fastapi.tiangolo.com"],
+    # Adicione outros tipos de recursos conforme necessário
+}
+
+app.add_middleware(CSPMiddleware, policy=csp)
 
 # Configuração do CORS
 app.add_middleware(
