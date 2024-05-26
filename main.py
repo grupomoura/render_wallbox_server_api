@@ -10,6 +10,7 @@ from models import ChargerSchedule, EnergyCost, MaxChargingCurrent, MaxIcpCurren
 from wallbox import Wallbox
 import os
 from dotenv import load_dotenv
+import secrets
 from security import (
     authenticate_user,
     create_access_token,
@@ -60,14 +61,15 @@ if ENVIRONMENT == "production":
     # Middleware para adicionar headers de segurança
     @app.middleware("http")
     async def add_security_headers(request: requests.Request, call_next):
+        nonce = secrets.token_urlsafe(16)
         response = await call_next(request)
-        # Content Security Policy
         response.headers['Content-Security-Policy'] = (
-            "default-src 'self'; "
-            "script-src 'self' https://cdn.jsdelivr.net; "
-            "style-src 'self' https://cdn.jsdelivr.net; "
-            "img-src 'self' data: https://fastapi.tiangolo.com; "
-            "connect-src 'self';"
+            f"default-src 'self'; "
+            f"script-src 'self' https://cdn.jsdelivr.net 'nonce-{nonce}'; "
+            f"style-src 'self' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
+            f"font-src 'self' https://fonts.gstatic.com; "
+            f"img-src 'self' data: https://fastapi.tiangolo.com; "
+            f"connect-src 'self';"
         )
         # Strict-Transport-Security
         response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
@@ -135,14 +137,14 @@ async def set_energy_cost(charger_id: int, cost: EnergyCost, current_user: UserI
     logger.info(f"Setting energy cost for charger {charger_id}")
     return {"status": f"{charger_id} energy cost set"}
 
-@app.post("/chargers/{charger_id}/restart", summary="Reiniciar Carregador", description="Reinicia (reboot) o carregador especificado", dependencies=[Depends(verify_token)])
-async def restart_charger(charger_id: int, token: str):
+@app.post("/chargers/{charger_id}/restart", summary="Reiniciar Carregador", description="Reinicia (reboot) o carregador especificado", dependencies=[Depends(get_current_admin)])
+async def restart_charger(charger_id: int, current_user: UserInDB = Depends(get_current_admin)):
     wb.restartCharger(charger_id)
     logger.info(f"Restarting charger {charger_id}")
     return {"status": f"{charger_id} restarting"}
 
-@app.post("/chargers/{charger_id}/max_icp_current", summary="Definir Corrente Máxima de ICP", description="Define a corrente máxima de ICP disponível para o carregador especificado", dependencies=[Depends(verify_token)])
-async def set_icp_max_current(charger_id: int, icp_current: MaxIcpCurrent, token: str):
+@app.post("/chargers/{charger_id}/max_icp_current", summary="Definir Corrente Máxima de ICP", description="Define a corrente máxima de ICP disponível para o carregador especificado", dependencies=[Depends(get_current_admin)])
+async def set_icp_max_current(charger_id: int, icp_current: MaxIcpCurrent, current_user: UserInDB = Depends(get_current_admin)):
     wb.setIcpMaxCurrent(charger_id, icp_current.newIcpMaxCurrentValue)
     logger.info(f"Setting ICP max current for charger {charger_id}")
     return {"status": f"{charger_id} ICP max current set"}
@@ -217,4 +219,4 @@ async def set_charger_schedules(charger_id: int, schedules: List[ChargerSchedule
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=PORT)
+    uvicorn.run(app, host="0.0.0.0", port=int(PORT))
