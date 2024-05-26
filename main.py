@@ -44,11 +44,12 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Permitir todas as origens
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["Authorization", "Content-Type", "WWW-Authenticate"], 
 )
 
 ENVIRONMENT = os.getenv("ENVIRONMENT")
+PORT = os.getenv("PORT") or 8000
 
 # Regras de segurança no HEADER
 if ENVIRONMENT == "production":
@@ -87,14 +88,18 @@ def verify_token(token: str):
 # Authenticate with the credentials above
 try:
     wb.authenticate()
-    print("Authenticated successfully")
     logger.info("Authenticated successfully")
 except requests.exceptions.HTTPError as err:
-    print(f"Authentication failed: {err}")
     logger.error(f"Authentication failed: {err}")
 
 # Print a list of chargers in the account
-logger.info("Available chargers: %s", wb.getChargersList())
+# logger.info("Available chargers: %s", wb.getChargersList())
+
+# Test API
+@app.get("/", summary="Chamada teste da API", description="Retorna uma mensagem padrão")
+async def root():
+    logger.info("Attempting test API")
+    return {"message": "API para interagir com carregadores Wallbox"}
 
 # Fluxo de autenticação OAuth2 usando token JWT
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -116,11 +121,6 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     )
     logger.info("User %s authenticated successfully", user.username)
     return {"access_token": access_token, "token_type": "bearer"}
-
-# Test API
-@app.get("/")
-async def root():
-    return {"message": "Hello World"}
     
 # Admin Acess Endpoints: 
 @app.post("/chargers/{charger_id}/energy_cost", summary="Definir Custo de Energia", description="Define o custo de energia por kWh para o carregador especificado", dependencies=[Depends(get_current_admin)])
@@ -211,4 +211,4 @@ async def set_charger_schedules(charger_id: int, schedules: List[ChargerSchedule
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=PORT)
